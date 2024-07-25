@@ -24,7 +24,9 @@ class AccountRemoteDataSourceImpl @Inject constructor(private val auth: Firebase
     }
 
     override suspend fun authenticate(email: String, password: String): Boolean {
-        return true
+        val result = auth.signInWithEmailAndPassword(email, password).await()
+        _currentUser.value = result.user?.let { User(it.uid, it.email.orEmpty()) }
+        return result.user != null
     }
 
     override suspend fun createAccount(email: String, password: String): Boolean {
@@ -35,5 +37,11 @@ class AccountRemoteDataSourceImpl @Inject constructor(private val auth: Firebase
             println(throwable.message)
         }
         return false
+    }
+
+    override suspend fun signOut(): Boolean {
+        auth.signOut()
+        _currentUser.value = null
+        return true
     }
 }
