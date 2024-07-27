@@ -3,7 +3,6 @@ package com.example.mynote.composes.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mynote.data.repositories.AccountRepository
-import com.example.mynote.data.repositories.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,18 +12,26 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val repository: NoteRepository,
     private val accountRepository: AccountRepository
-): ViewModel() {
-    private val _uiState = MutableStateFlow(HomeUiState(
-        userEmail = if (accountRepository.currentUser.value != null) accountRepository.currentUser.value!!.email else "",
-    ))
+) : ViewModel() {
+    private val _uiState = accountRepository.currentUser.value?.let {
+        MutableStateFlow(HomeUiState(userEmail = it.email))
+    } ?: MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            accountRepository.currentUser.collect { currentUser ->
+                _uiState.update {
+                    it.copy(isSignOut = currentUser == null)
+                }
+            }
+        }
+    }
 
     fun signOut() {
         viewModelScope.launch {
             accountRepository.signOut()
-            _uiState.update { it.copy(isSignOut = true) }
         }
     }
 }
