@@ -12,7 +12,9 @@ import javax.inject.Inject
 class AccountRemoteDataSourceImpl @Inject constructor(private val auth: FirebaseAuth) : AccountRemoteDataSource {
     override val currentUserId: String  = auth.currentUser?.uid.orEmpty()
     override val hasUser: Boolean = auth.currentUser != null
-    private val _currentUser = MutableStateFlow<User?>(null)
+    private val _currentUser: MutableStateFlow<User?> = MutableStateFlow(
+        auth.currentUser?.let { User(it.uid, it.email.orEmpty()) }
+    )
     override val currentUser: StateFlow<User?>  = _currentUser.asStateFlow()
 
     init {
@@ -23,7 +25,7 @@ class AccountRemoteDataSourceImpl @Inject constructor(private val auth: Firebase
         auth.addAuthStateListener(authStateListener)
     }
 
-    override suspend fun authenticate(email: String, password: String): Boolean {
+    override suspend fun loginWithEmailAndPassword(email: String, password: String): Boolean {
         val result = auth.signInWithEmailAndPassword(email, password).await()
         _currentUser.value = result.user?.let { User(it.uid, it.email.orEmpty()) }
         return result.user != null
@@ -32,6 +34,7 @@ class AccountRemoteDataSourceImpl @Inject constructor(private val auth: Firebase
     override suspend fun createAccount(email: String, password: String): Boolean {
         try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
+            _currentUser.value = result.user?.let { User(it.uid, it.email.orEmpty()) }
             return result.user != null
         } catch (throwable: Throwable) {
             println(throwable.message)
@@ -39,9 +42,8 @@ class AccountRemoteDataSourceImpl @Inject constructor(private val auth: Firebase
         return false
     }
 
-    override suspend fun signOut(): Boolean {
+    override suspend fun signOut() {
         auth.signOut()
         _currentUser.value = null
-        return true
     }
 }

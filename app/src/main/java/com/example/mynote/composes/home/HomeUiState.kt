@@ -1,5 +1,8 @@
 package com.example.mynote.composes.home
 
 data class HomeUiState(
-    val name: String = ""
+    val userEmail: String = "",
+    val isSignOut: Boolean = false,
+    val isSignOutSuccess: Boolean = false,
+    val resultMessage: String = ""
 )

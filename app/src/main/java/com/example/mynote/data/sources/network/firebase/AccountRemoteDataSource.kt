@@ -7,7 +7,7 @@ interface AccountRemoteDataSource {
     val currentUserId: String
     val hasUser: Boolean
     val currentUser: StateFlow<User?>
-    suspend fun authenticate(email: String, password: String): Boolean
+    suspend fun loginWithEmailAndPassword(email: String, password: String): Boolean
     suspend fun createAccount(email: String, password: String): Boolean
-    suspend fun signOut(): Boolean
+    suspend fun signOut()
 }
