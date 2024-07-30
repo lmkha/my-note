@@ -25,19 +25,7 @@ class NoteRemoteDataSourceImpl @Inject constructor(
         .document(userId)
         .collection(NOTE_COLLECTION)
 
-//    override val notes: Flow<List<Note>> = callbackFlow {
-//        val listener = noteCollectionRef.addSnapshotListener { snapshot, exception ->
-//            if (exception != null) {
-//                close(exception)
-//                return@addSnapshotListener
-//            }
-//            val notes: List<Note> = snapshot?.documents?.mapNotNull { it.toObject<Note>() } ?: emptyList()
-//            trySend(notes).isSuccess
-//        }
-//        awaitClose { listener.remove() }
-//    }
     override val notes: Flow<List<Note>> = noteCollectionRef.dataObjects()
-
 
     override suspend fun addNote(note: Note) {
         val modifiedNote = note.copy(userId = userId)
