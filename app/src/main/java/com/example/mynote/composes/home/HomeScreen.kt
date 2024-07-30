@@ -48,7 +48,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun HomeScreenContent(
+private fun HomeScreenContent(
     uiState: HomeUiState,
     onSignOut: () -> Unit,
     onNavigateToAddEditNote: () -> Unit,
