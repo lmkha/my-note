@@ -49,6 +49,14 @@ fun SignUpScreenContent(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        LaunchedEffect(key1 = uiState.isSignUp, key2 = uiState.isSignUpSuccess) {
+            if (uiState.isSignUp && uiState.isSignUpSuccess) {
+                delay(1000)
+                onSignUpSuccess()
+            }
+
+        }
+
         var email by remember {
             mutableStateOf("")
         }
@@ -100,13 +108,6 @@ fun SignUpScreenContent(
             }
         ) {
             Text(text = "Sign Up")
-        }
-
-        if (uiState.isSignUp && uiState.isSignUpSuccess) {
-            LaunchedEffect(key1 = Unit) {
-                delay(2000)
-                onSignUpSuccess()
-            }
         }
     }
 }

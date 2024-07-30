@@ -2,20 +2,26 @@ package com.example.mynote.composes.login
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,8 +54,10 @@ fun LoginScreenContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        if (uiState.isLoginSuccess) {
-            navigateToHome()
+        LaunchedEffect(uiState.isLoginSuccess) {
+            if (uiState.isLoginSuccess) {
+                navigateToHome()
+            }
         }
 
         Text(text = "Login Screen")
@@ -71,9 +79,23 @@ fun LoginScreenContent(
             value = password,
             onValueChange = { password = it }
         )
-
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            if (uiState.isLoginSuccess) {
+                Text(text = "Login success")
+                Icon(
+                    imageVector = Icons.Default.Done,
+                    contentDescription = "Success",
+                    tint = Color.Green
+                )
+            }
+        }
         Column(
-            modifier = Modifier.fillMaxWidth().padding(end = 45.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(end = 45.dp),
             horizontalAlignment = Alignment.End
         ) {
             TextButton(onClick = {
@@ -99,7 +121,8 @@ fun LoginScreenContent(
 @Composable
 fun LoginScreenPreview() {
     LoginScreenContent(
-        uiState = LoginUiState(),
+        uiState = LoginUiState(
+        ),
         onLogin = { _, _ -> },
         navigateToHome = { },
         navigateSignUp = { }

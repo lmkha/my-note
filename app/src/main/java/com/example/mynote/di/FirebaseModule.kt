@@ -1,4 +1,4 @@
-package com.example.mynote.di.datasource
+package com.example.mynote.di
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
@@ -13,6 +13,9 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 object FirebaseModule {
-    @Provides fun provideFirebaseAuth(): FirebaseAuth = Firebase.auth
-    @Provides fun provideFirebaseFireStore(): FirebaseFirestore = Firebase.firestore
+    @Provides
+    fun provideFirebaseAuth(): FirebaseAuth = Firebase.auth
+
+    @Provides
+    fun provideFirebaseFireStore(): FirebaseFirestore = Firebase.firestore
 }
