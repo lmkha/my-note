@@ -83,6 +83,8 @@ dependencies {
     // Hilt
     ksp(libs.hilt.android.compiler)
     implementation(libs.hilt.android)
+    // Lottie animation
+    implementation(libs.lottie.compose)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
