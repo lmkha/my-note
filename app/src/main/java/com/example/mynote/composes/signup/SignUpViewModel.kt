@@ -17,9 +17,9 @@ class SignUpViewModel @Inject constructor(
     private var _uiState = MutableStateFlow(SignUpUiState())
     val uiState = _uiState.asStateFlow()
 
-    fun signUp(email: String, password: String)  {
+    fun signUp(userName: String, email: String, password: String)  {
         viewModelScope.launch {
-            val result = repository.signUp(email, password)
+            val result = repository.signUp(userName, email, password)
             if (result) {
                 _uiState.update {
                     it.copy(

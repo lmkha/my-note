@@ -4,7 +4,7 @@ import com.example.mynote.data.models.Note
 
 data class HomeUiState(
     val notes: List<Note> = emptyList(),
-    val userEmail: String = "",
+    val userName: String = "",
     val isSignOut: Boolean = false,
     val isSignOutSuccess: Boolean = false,
     val resultMessage: String = ""

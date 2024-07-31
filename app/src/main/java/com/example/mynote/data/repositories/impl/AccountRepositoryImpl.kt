@@ -11,8 +11,8 @@ class AccountRepositoryImpl @Inject constructor(
 ): AccountRepository {
     override val currentUser: StateFlow<User?> = accountRemoteDataSource.currentUser
 
-    override suspend fun signUp(email: String, password: String): Boolean {
-        return accountRemoteDataSource.createAccount(email, password)
+    override suspend fun signUp(userName:String, email: String, password: String): Boolean {
+        return accountRemoteDataSource.createAccount(userName, email, password)
     }
 
     override suspend fun loginWithEmailAndPassword(email: String, password: String): Boolean {

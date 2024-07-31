@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
@@ -17,8 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,17 +24,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
-import com.example.mynote.R
+import com.example.mynote.composes.common.CustomTextField
+import com.example.mynote.composes.common.MyNoteAppAnimationIcon
 
 @Composable
 fun LoginScreen(
@@ -62,8 +55,11 @@ private fun LoginScreenContent(
     navigateSignUp: () -> Unit,
     navigateToHome: () -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
     Column(
-        modifier = Modifier.fillMaxSize().imePadding(),
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -73,18 +69,30 @@ private fun LoginScreenContent(
             }
         }
 
-        LoginScreenLoading()
+        MyNoteAppAnimationIcon(size = 150)
 
-        Text(
-            text = "Welcome to MyNote",
-            modifier = Modifier.padding(
-                top = 16.dp,
-                bottom = 16.dp
-            ),
-            color = Color.Black,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold
-        )
+        Row {
+            Text(
+                text = "Welcome to ",
+                modifier = Modifier.padding(
+                    top = 16.dp,
+                    bottom = 16.dp
+                ),
+                color = Color.Black,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "MyNote",
+                modifier = Modifier.padding(
+                    top = 16.dp,
+                    bottom = 16.dp
+                ),
+                color = Color(red = 61, green = 177, blue = 255),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
 
         var email by remember {
             mutableStateOf("")
@@ -93,45 +101,20 @@ private fun LoginScreenContent(
             mutableStateOf("")
         }
 
-        TextField(
-            label = { Text("Email") },
+        CustomTextField(
+            label = "Email",
             value = email,
-            onValueChange = { email = it },
-            modifier = Modifier.padding(
-                bottom = 8.dp
-            ),
-            colors = TextFieldDefaults.colors(
-                focusedTextColor = Color.Black,
-                focusedLabelColor = Color.Black,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedTextColor = Color.Black,
-                unfocusedLabelColor = Color.Gray,
-                unfocusedContainerColor = Color.LightGray,
-                unfocusedIndicatorColor = Color.Transparent,
-            ),
-            shape = RoundedCornerShape(8.dp),
-
+            focusManager = focusManager,
+            onValueChange = { email = it }
         )
 
-        TextField(
-            label = { Text("Password") },
+        CustomTextField(
+            label = "Password",
             value = password,
+            focusManager = focusManager,
             onValueChange = { password = it },
-            modifier = Modifier.padding(
-                bottom = 8.dp
-            ),
-            colors = TextFieldDefaults.colors(
-                focusedTextColor = Color.Black,
-                focusedLabelColor = Color.Black,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedTextColor = Color.Black,
-                unfocusedLabelColor = Color.Gray,
-                unfocusedContainerColor = Color.LightGray,
-                unfocusedIndicatorColor = Color.Transparent,
-            ),
-            shape = RoundedCornerShape(8.dp),
-
-            )
+            isPassword = true
+        )
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -176,22 +159,6 @@ private fun LoginScreenContent(
             Text(text = "Login")
         }
     }
-}
-
-@Composable
-private fun LoginScreenLoading() {
-    val composition by rememberLottieComposition(
-        spec = LottieCompositionSpec.RawRes(R.raw.note_animation)
-    )
-    val progress by animateLottieCompositionAsState(
-        composition = composition,
-        iterations = LottieConstants.IterateForever
-    )
-    LottieAnimation(
-        modifier = Modifier.size(150.dp),
-        composition = composition,
-        progress = { progress }
-    )
 }
 
 @Preview(showBackground = true)
