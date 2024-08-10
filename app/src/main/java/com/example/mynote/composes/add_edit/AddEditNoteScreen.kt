@@ -171,6 +171,7 @@ private fun AddEditNoteScreenPreview() {
                 content = "Finish on time by following the best practices"
             )
         )
+        // Check PowerShell
     )
 }
 
