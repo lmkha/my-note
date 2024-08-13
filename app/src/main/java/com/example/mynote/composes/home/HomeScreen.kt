@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -142,7 +143,7 @@ private fun HomeScreenContent(
                             NoteItem(
                                 note = note,
                                 onclick = { onNavigateToEditNote(note) },
-                                onSwipeEndToStart = { onDeleteNote(note) }
+                                onDeleteClick = { onDeleteNote(note) }
                             )
                         }
                     }
@@ -194,25 +195,24 @@ private fun HomeScreenTopAppBar(
 @Composable
 private fun NoteItem(
     note: Note,
-    onSwipeEndToStart: () -> Unit = {},
+    onDeleteClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
     onclick: () -> Unit = {},
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         initialValue = SwipeToDismissBoxValue.Settled,
+//        initialValue = if (note.id == "2") SwipeToDismissBoxValue.EndToStart else SwipeToDismissBoxValue.Settled,
         positionalThreshold = { it * 0.25f },
         confirmValueChange = { state ->
             when (state) {
                 SwipeToDismissBoxValue.EndToStart -> {
-                    onSwipeEndToStart()
                     true
                 }
 
                 else -> false
             }
         },
-
-        )
+    )
 
     val cardHeight = 90.dp
     val cardWidth = 350.dp
@@ -221,54 +221,89 @@ private fun NoteItem(
     )
     val cardShape = RoundedCornerShape(8.dp)
 
-    SwipeToDismissBox(modifier = Modifier
-        .padding(
-            start = 16.dp,
-            end = 16.dp,
-        )
-        .clip(RoundedCornerShape(16.dp)), state = dismissState, backgroundContent = {
-        var alignment: Alignment.Horizontal = Alignment.Start
-        val color: Color
-        val icon: @Composable () -> Unit
-
-        when (dismissState.targetValue) {
-            SwipeToDismissBoxValue.EndToStart -> {
-                alignment = Alignment.End
-                color = Color.Red
-                icon = {
+    SwipeToDismissBox(
+        modifier = Modifier
+            .padding(
+                start = 16.dp,
+                end = 16.dp,
+            )
+            .clip(RoundedCornerShape(16.dp)),
+        state = dismissState,
+        backgroundContent = {
+            if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
+                val color: Color = Color.Red
+                val icon: @Composable () -> Unit = {
                     Icon(
                         imageVector = Icons.Filled.Delete, contentDescription = "Delete wish"
                     )
                 }
-            }
+                
+                Card(
+                    onClick = { },
+                    modifier = Modifier
+                        .height(cardHeight)
+                        .width(cardWidth)
+                        .padding(cardPadding)
+                        .clip(cardShape),
+                    shape = cardShape,
+                    colors = CardDefaults.cardColors(
+                        containerColor = color
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+                                Card(
+                                    modifier = Modifier
+                                        .height(cardHeight)
+                                        .width(250.dp)
+                                        .clip(cardShape)
+                                        .combinedClickable(
+                                            onClick = { onclick() },
+                                            onLongClick = { onLongClick() }),
+                                    shape = cardShape,
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(181, 223, 252)
+                                    ),
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(8.dp)
+                                    ) {
+                                        Text(
+                                            text = note.title,
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        Text(
+                                            text = note.content,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                            IconButton(
+                                modifier = Modifier.width(68.dp).height(73.dp),
+                                onClick = { onDeleteClick() }
+                            ) {
+                                icon()
+                            }
+                        }
 
-            else -> {
-                color = Color.Transparent
-                icon = {}
+
+                    }
+                }
+
             }
         }
-
-        Card(
-            onClick = { },
-            modifier = Modifier
-                .height(cardHeight)
-                .width(cardWidth)
-                .padding(cardPadding)
-                .clip(cardShape),
-            shape = cardShape,
-            colors = CardDefaults.cardColors(
-                containerColor = color
-            )
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = alignment
-            ) {
-                icon()
-            }
-        }
-    }) {
+    ) {
         Card(
             modifier = Modifier
                 .height(cardHeight)
