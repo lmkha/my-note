@@ -9,5 +9,4 @@ interface NoteRemoteDataSource {
     suspend fun getNoteById(noteId: String): Note?
     suspend fun update(note: Note)
     suspend fun delete(noteId: String)
-    suspend fun getInfo()
 }

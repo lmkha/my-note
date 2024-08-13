@@ -1,6 +1,5 @@
 package com.example.mynote.data.repositories.impl
 
-import android.util.Log
 import com.example.mynote.data.models.Note
 import com.example.mynote.data.repositories.NoteRepository
 import com.example.mynote.data.sources.network.firebase.NoteRemoteDataSource
@@ -16,8 +15,11 @@ class NoteRepositoryImpl @Inject constructor(
         noteRemoteDataSource.addNote(note)
     }
 
-    override suspend fun getInfo() {
-        Log.i("CHECK_VAR", "Repository, Notes: $notes")
-        noteRemoteDataSource.getInfo()
+    override suspend fun updateNote(note: Note) {
+       noteRemoteDataSource.update(note)
+    }
+
+    override suspend fun getNoteById(noteId: String): Note? {
+        return noteRemoteDataSource.getNoteById(noteId)
     }
 }

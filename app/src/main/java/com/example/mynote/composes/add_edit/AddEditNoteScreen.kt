@@ -37,11 +37,12 @@ import com.example.mynote.data.models.Note
 
 @Composable
 fun AddEditNoteScreen(
-    sentNote: Note? = null,
+    sentNoteId: String = "",    // Base on this id, we will decide whether to add or edit the note
     viewModel: AddEditNoteViewModel = hiltViewModel(),
     onNavigateToHome: () -> Unit = {},
 ) {
-    viewModel.modifyUiState(sentNote)
+    // Because avoid create viewmodel with parameters, so call initUiState here instead of in viewmodel init block
+    viewModel.initUiState(sentNoteId)
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
     AddEditNoteScreenContent(
         uiState = uiState,
@@ -89,7 +90,6 @@ fun AddEditNoteScreenContent(
                 .padding(scaffoldPaddingValues)
                 .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
-//            verticalArrangement = Arrangement.Center
         ) {
             AnimationIcon(
                 modifier = Modifier.padding(bottom = 16.dp),
@@ -171,7 +171,6 @@ private fun AddEditNoteScreenPreview() {
                 content = "Finish on time by following the best practices"
             )
         )
-        // Check PowerShell
     )
 }
 

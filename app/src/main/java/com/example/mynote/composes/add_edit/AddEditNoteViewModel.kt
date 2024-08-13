@@ -18,9 +18,14 @@ class AddEditNoteViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AddEditUiState())
     val uiState = _uiState.asStateFlow()
 
-    fun modifyUiState(note: Note?) {
-        _uiState.update {
-            it.copy(sentNote = note)
+    fun initUiState(noteId: String) {
+        if (noteId.isNotEmpty()) {
+            viewModelScope.launch {
+                val note = noteRepository.getNoteById(noteId)
+                _uiState.update {
+                    it.copy(sentNote = note)
+                }
+            }
         }
     }
 
@@ -40,7 +45,7 @@ class AddEditNoteViewModel @Inject constructor(
 
     fun updateNote(note: Note) {
         viewModelScope.launch {
-//            noteRepository.updateNote(note)
+            noteRepository.updateNote(note)
         }
         _uiState.update {
             it.copy(isAddEditNoteSuccess = true)

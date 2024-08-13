@@ -1,6 +1,5 @@
 package com.example.mynote.data.sources.network.firebase.impl
 
-import android.util.Log
 import com.example.mynote.data.models.Note
 import com.example.mynote.data.sources.network.firebase.NoteRemoteDataSource
 import com.google.firebase.auth.FirebaseAuth
@@ -42,9 +41,5 @@ class NoteRemoteDataSourceImpl @Inject constructor(
 
     override suspend fun delete(noteId: String) {
         noteCollectionRef.document(noteId).delete().await()
-    }
-
-    override suspend fun getInfo() {
-        Log.i("CHECK_VAR", "DataSource: User ID: $userId\nNotes: $notes")
     }
 }

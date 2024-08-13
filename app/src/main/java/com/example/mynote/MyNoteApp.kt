@@ -1,9 +1,11 @@
 package com.example.mynote
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.mynote.composes.Screen
 import com.example.mynote.composes.add_edit.AddEditNoteScreen
 import com.example.mynote.composes.home.HomeScreen
@@ -39,8 +41,11 @@ fun MyNoteApp() {
 
         composable(route = Screen.Home.route) {
             HomeScreen(
-                onNavigateToAddEditNote = {
-                    navController.navigate(Screen.AddEditNote.route)
+                onNavigateToAddNote = {
+                    navController.navigate(Screen.AddNote.route)
+                },
+                onNavigateToEditNote = { note ->
+                    navController.navigate("${Screen.EditNote.route}/${note.id}")
                 },
                 onSignOutNavigate = {
                     navController.navigate(Screen.Login.route) {
@@ -50,14 +55,36 @@ fun MyNoteApp() {
             )
         }
 
-        composable(route = Screen.AddEditNote.route) {
+        composable(route = Screen.AddNote.route) {
             AddEditNoteScreen(
                 onNavigateToHome = {
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.AddEditNote.route) { inclusive = true }
+                        popUpTo(Screen.AddNote.route) { inclusive = true }
                     }
                 }
             )
+        }
+
+        composable(
+            route = Screen.EditNote.route + "/{noteId}",
+            arguments = listOf(
+                navArgument("noteId") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) { navBackStackEntry ->
+            val noteId = navBackStackEntry.arguments?.getString("noteId")
+            noteId?.let {
+                AddEditNoteScreen(
+                    sentNoteId = noteId,
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.EditNote.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
         }
     }
 }

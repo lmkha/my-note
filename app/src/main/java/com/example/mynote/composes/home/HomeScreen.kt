@@ -61,14 +61,16 @@ import com.example.mynote.data.models.Note
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToAddEditNote: () -> Unit,
+    onNavigateToEditNote: (Note) -> Unit = {},
+    onNavigateToAddNote: () -> Unit = {},
     onSignOutNavigate: () -> Unit
 ) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     HomeScreenContent(
         uiState = uiState.value,
         onSignOut = viewModel::signOut,
-        onNavigateToAddEditNote = onNavigateToAddEditNote,
+        onNavigateToEditNote = onNavigateToEditNote,
+        onNavigateToAddNote = onNavigateToAddNote,
         onSignOutNavigate = onSignOutNavigate,
     )
 }
@@ -78,7 +80,8 @@ fun HomeScreen(
 private fun HomeScreenContent(
     uiState: HomeUiState,
     onSignOut: () -> Unit,
-    onNavigateToAddEditNote: () -> Unit,
+    onNavigateToEditNote: (Note) -> Unit = {},
+    onNavigateToAddNote: () -> Unit = {},
     onSignOutNavigate: () -> Unit,
 ) {
     LaunchedEffect(uiState.isSignOut) {
@@ -88,32 +91,25 @@ private fun HomeScreenContent(
     }
 
     val scrollBarBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBarBehavior.nestedScrollConnection),
-        topBar = {
-            HomeScreenTopAppBar(
-                scrollBehavior = scrollBarBehavior,
-                onSignOut = onSignOut
+    Scaffold(modifier = Modifier.nestedScroll(scrollBarBehavior.nestedScrollConnection), topBar = {
+        HomeScreenTopAppBar(
+            scrollBehavior = scrollBarBehavior, onSignOut = onSignOut
+        )
+    }, bottomBar = {}, floatingActionButton = {
+        FloatingActionButton(
+            modifier = Modifier.padding(16.dp),
+            onClick = { onNavigateToAddNote() },
+            containerColor = Color(8, 135, 226),
+            contentColor = Color.White,
+            elevation = FloatingActionButtonDefaults.elevation(5.dp)
+        ) {
+            Icon(
+                modifier = Modifier.size(30.dp),
+                imageVector = Icons.Filled.Add,
+                contentDescription = null
             )
-        },
-        bottomBar = {},
-        floatingActionButton = {
-            FloatingActionButton(
-                modifier = Modifier
-                    .padding(16.dp),
-                onClick = { onNavigateToAddEditNote() },
-                containerColor = Color(8, 135, 226),
-                contentColor = Color.White,
-                elevation = FloatingActionButtonDefaults.elevation(5.dp)
-            ) {
-                Icon(
-                    modifier = Modifier.size(30.dp),
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = null
-                )
-            }
         }
-    ) { scaffoldPaddingValues ->
+    }) { scaffoldPaddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -141,11 +137,11 @@ private fun HomeScreenContent(
             } else {
                 LazyColumn {
                     if (uiState.notes.isNotEmpty()) {
-                        items(
-                            items = uiState.notes,
-                            key = { note -> note.id }
-                        ) { note ->
-                            NoteItem(note = note)
+                        items(items = uiState.notes, key = { note -> note.id }) { note ->
+                            NoteItem(
+                                note = note,
+                                onclick = { onNavigateToEditNote(note) },
+                            )
                         }
                     }
                 }
@@ -160,54 +156,36 @@ private fun HomeScreenTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
     onSignOut: () -> Unit = {}
 ) {
-    TopAppBar(
-        scrollBehavior = scrollBehavior,
-        title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                MyNoteAppAnimationIcon(
-                    modifier = Modifier.padding(end = 8.dp),
-                    size = 40
-                )
-                Text(
-                    text = "MyNote",
-                    style = MaterialTheme.typography.labelMedium
-                )
-            }
-        },
-        actions = {
-            var expanded by remember {
-                mutableStateOf(false)
-            }
-
-            IconButton(
-                onClick = { expanded = true }
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = null
-                )
-            }
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text(text = "Logout") },
-                    onClick = {
-                        expanded = false
-                        onSignOut()
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(text = "Manage account") },
-                    onClick = { }
-                )
-            }
+    TopAppBar(scrollBehavior = scrollBehavior, title = {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            MyNoteAppAnimationIcon(
+                modifier = Modifier.padding(end = 8.dp), size = 40
+            )
+            Text(
+                text = "MyNote", style = MaterialTheme.typography.labelMedium
+            )
         }
-    )
+    }, actions = {
+        var expanded by remember {
+            mutableStateOf(false)
+        }
+
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                imageVector = Icons.Filled.MoreVert, contentDescription = null
+            )
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text(text = "Logout") }, onClick = {
+                expanded = false
+                onSignOut()
+            })
+            DropdownMenuItem(text = { Text(text = "Manage account") }, onClick = { })
+        }
+    })
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -221,7 +199,7 @@ private fun NoteItem(
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         initialValue = SwipeToDismissBoxValue.Settled,
-        positionalThreshold = { it * 0.25f},
+        positionalThreshold = { it * 0.25f },
         confirmValueChange = { state ->
             when (state) {
                 SwipeToDismissBoxValue.StartToEnd -> {
@@ -238,88 +216,76 @@ private fun NoteItem(
             }
         },
 
-    )
+        )
 
     val cardHeight = 90.dp
     val cardWidth = 350.dp
     val cardPadding = PaddingValues(
-        top = 8.dp,
-        bottom = 8.dp,
-        start = 16.dp,
-        end = 16.dp
+        top = 8.dp, bottom = 8.dp, start = 16.dp, end = 16.dp
     )
     val cardShape = RoundedCornerShape(8.dp)
 
-    SwipeToDismissBox(
-        modifier = Modifier
-            .padding(
-                start = 16.dp,
-                end = 16.dp,
-            )
-            .clip(RoundedCornerShape(16.dp)),
-        state = dismissState,
-        backgroundContent = {
-            var alignment: Alignment.Horizontal = Alignment.Start
-            val color: Color
-            val icon: @Composable () -> Unit
+    SwipeToDismissBox(modifier = Modifier
+        .padding(
+            start = 16.dp,
+            end = 16.dp,
+        )
+        .clip(RoundedCornerShape(16.dp)), state = dismissState, backgroundContent = {
+        var alignment: Alignment.Horizontal = Alignment.Start
+        val color: Color
+        val icon: @Composable () -> Unit
 
-            when (dismissState.targetValue) {
-                SwipeToDismissBoxValue.StartToEnd -> {
-                    alignment = Alignment.Start
-                    color = Color.Green
-                    icon =
-                        { Icon(imageVector = Icons.Filled.Edit, contentDescription = "Edit wish") }
-                }
+        when (dismissState.targetValue) {
+            SwipeToDismissBoxValue.StartToEnd -> {
+                alignment = Alignment.Start
+                color = Color.Green
+                icon = { Icon(imageVector = Icons.Filled.Edit, contentDescription = "Edit wish") }
+            }
 
-                SwipeToDismissBoxValue.EndToStart -> {
-                    alignment = Alignment.End
-                    color = Color.Red
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = "Delete wish"
-                        )
-                    }
-                }
-
-                else -> {
-                    color = Color.Transparent
-                    icon = {}
+            SwipeToDismissBoxValue.EndToStart -> {
+                alignment = Alignment.End
+                color = Color.Red
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.Delete, contentDescription = "Delete wish"
+                    )
                 }
             }
 
-            Card(
-                onClick = {  },
-                modifier = Modifier
-                    .height(cardHeight)
-                    .width(cardWidth)
-                    .padding(cardPadding)
-                    .clip(cardShape),
-                shape = cardShape,
-                colors = CardDefaults.cardColors(
-                    containerColor = color
-                )
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = alignment
-                ) {
-                    icon()
-                }
+            else -> {
+                color = Color.Transparent
+                icon = {}
             }
         }
-    ) {
+
+        Card(
+            onClick = { },
+            modifier = Modifier
+                .height(cardHeight)
+                .width(cardWidth)
+                .padding(cardPadding)
+                .clip(cardShape),
+            shape = cardShape,
+            colors = CardDefaults.cardColors(
+                containerColor = color
+            )
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = alignment
+            ) {
+                icon()
+            }
+        }
+    }) {
         Card(
             modifier = Modifier
                 .height(cardHeight)
                 .width(cardWidth)
                 .padding(cardPadding)
                 .clip(cardShape)
-                .combinedClickable(
-                    onClick = { onclick() },
-                    onLongClick = { onLongClick() }
-                ),
+                .combinedClickable(onClick = { onclick() }, onLongClick = { onLongClick() }),
             shape = cardShape,
             colors = CardDefaults.cardColors(
                 containerColor = Color(181, 223, 252)
@@ -329,8 +295,7 @@ private fun NoteItem(
                 modifier = Modifier.padding(8.dp)
             ) {
                 Text(
-                    text = note.title,
-                    style = MaterialTheme.typography.titleMedium
+                    text = note.title, style = MaterialTheme.typography.titleMedium
                 )
                 Text(
                     text = note.content,
@@ -350,14 +315,10 @@ private fun HomeScreenPreview() {
         uiState = HomeUiState(
             notes = listOf(
                 Note(
-                    id = "1",
-                    title = "English certificate",
-                    content = "Try to get 800"
+                    id = "1", title = "English certificate", content = "Try to get 800"
                 ),
                 Note(
-                    id = "2",
-                    title = "Android Dev",
-                    content = "Get a good job with 3000$ salary"
+                    id = "2", title = "Android Dev", content = "Get a good job with 3000$ salary"
                 ),
                 Note(
                     id = "3",
@@ -367,7 +328,8 @@ private fun HomeScreenPreview() {
             ),
         ),
         onSignOut = {},
-        onNavigateToAddEditNote = {},
+        onNavigateToAddNote = {},
+        onNavigateToEditNote = {},
         onSignOutNavigate = {},
     )
 }
