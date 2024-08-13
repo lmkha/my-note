@@ -19,6 +19,12 @@ class NoteRepositoryImpl @Inject constructor(
        noteRemoteDataSource.update(note)
     }
 
+    override suspend fun deleteNote(note: Note) {
+        if (note.id.isNotEmpty()) {
+            noteRemoteDataSource.delete(note.id)
+        }
+    }
+
     override suspend fun getNoteById(noteId: String): Note? {
         return noteRemoteDataSource.getNoteById(noteId)
     }

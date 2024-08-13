@@ -71,8 +71,8 @@ fun AddEditNoteScreenContent(
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     uiState.sentNote?.let {
-        title = it.title
-        content = it.content
+        title = uiState.title
+        content = uiState.content
     }
 
     Scaffold(

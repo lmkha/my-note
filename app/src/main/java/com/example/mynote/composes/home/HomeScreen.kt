@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -71,6 +70,7 @@ fun HomeScreen(
         onSignOut = viewModel::signOut,
         onNavigateToEditNote = onNavigateToEditNote,
         onNavigateToAddNote = onNavigateToAddNote,
+        onDeleteNote = viewModel::deleteNote,
         onSignOutNavigate = onSignOutNavigate,
     )
 }
@@ -82,6 +82,7 @@ private fun HomeScreenContent(
     onSignOut: () -> Unit,
     onNavigateToEditNote: (Note) -> Unit = {},
     onNavigateToAddNote: () -> Unit = {},
+    onDeleteNote: (Note) -> Unit = {},
     onSignOutNavigate: () -> Unit,
 ) {
     LaunchedEffect(uiState.isSignOut) {
@@ -141,6 +142,7 @@ private fun HomeScreenContent(
                             NoteItem(
                                 note = note,
                                 onclick = { onNavigateToEditNote(note) },
+                                onSwipeEndToStart = { onDeleteNote(note) }
                             )
                         }
                     }
@@ -192,7 +194,6 @@ private fun HomeScreenTopAppBar(
 @Composable
 private fun NoteItem(
     note: Note,
-    onSwipeStartToEnd: () -> Unit = {},
     onSwipeEndToStart: () -> Unit = {},
     onLongClick: () -> Unit = {},
     onclick: () -> Unit = {},
@@ -202,11 +203,6 @@ private fun NoteItem(
         positionalThreshold = { it * 0.25f },
         confirmValueChange = { state ->
             when (state) {
-                SwipeToDismissBoxValue.StartToEnd -> {
-                    onSwipeStartToEnd()
-                    true
-                }
-
                 SwipeToDismissBoxValue.EndToStart -> {
                     onSwipeEndToStart()
                     true
@@ -236,12 +232,6 @@ private fun NoteItem(
         val icon: @Composable () -> Unit
 
         when (dismissState.targetValue) {
-            SwipeToDismissBoxValue.StartToEnd -> {
-                alignment = Alignment.Start
-                color = Color.Green
-                icon = { Icon(imageVector = Icons.Filled.Edit, contentDescription = "Edit wish") }
-            }
-
             SwipeToDismissBoxValue.EndToStart -> {
                 alignment = Alignment.End
                 color = Color.Red

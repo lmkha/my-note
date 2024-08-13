@@ -21,9 +21,14 @@ class AddEditNoteViewModel @Inject constructor(
     fun initUiState(noteId: String) {
         if (noteId.isNotEmpty()) {
             viewModelScope.launch {
-                val note = noteRepository.getNoteById(noteId)
-                _uiState.update {
-                    it.copy(sentNote = note)
+                noteRepository.getNoteById(noteId)?.let { note->
+                    _uiState.update {
+                        it.copy(
+                            sentNote = note,
+                            title = note.title,
+                            content = note.content
+                        )
+                    }
                 }
             }
         }
@@ -37,9 +42,9 @@ class AddEditNoteViewModel @Inject constructor(
                     content = content
                 )
             )
-        }
-        _uiState.update {
-            it.copy(isAddEditNoteSuccess = true)
+            _uiState.update {
+                it.copy(isAddEditNoteSuccess = true)
+            }
         }
     }
 
@@ -48,7 +53,11 @@ class AddEditNoteViewModel @Inject constructor(
             noteRepository.updateNote(note)
         }
         _uiState.update {
-            it.copy(isAddEditNoteSuccess = true)
+            it.copy(
+                isAddEditNoteSuccess = true,
+                title = note.title,
+                content = note.content
+            )
         }
     }
 }

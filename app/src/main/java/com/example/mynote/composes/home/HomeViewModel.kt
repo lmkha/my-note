@@ -3,6 +3,7 @@ package com.example.mynote.composes.home
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mynote.data.models.Note
 import com.example.mynote.data.repositories.AccountRepository
 import com.example.mynote.data.repositories.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,6 +50,12 @@ class HomeViewModel @Inject constructor(
             } catch (throwable: Throwable) {
                 Log.e("CHECK_VAR", "HomeViewModel inside collect fun error: ${throwable.message}")
             }
+        }
+    }
+
+    fun deleteNote(note: Note) {
+        viewModelScope.launch {
+            noteRepository.deleteNote(note)
         }
     }
 
