@@ -70,7 +70,7 @@ fun AddEditNoteScreenContent(
 
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
-    uiState.sentNote?.let {
+    if (uiState.sentNote != null) {
         title = uiState.title
         content = uiState.content
     }
