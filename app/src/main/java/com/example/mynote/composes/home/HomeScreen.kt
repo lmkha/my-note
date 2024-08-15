@@ -1,6 +1,5 @@
 package com.example.mynote.composes.home
 
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -154,12 +153,10 @@ private fun HomeScreenContent(
                             Row {
                                 NoteItem(
                                     note = note,
-                                    isDone = note.done,
                                     onclick = { onNavigateToEditNote(note) },
                                     onDeleteClick = { onDeleteNote(note) },
                                     oneChangeIsDone = { onChangeIsDone(note) }
                                 )
-                                Log.i("CHECK_VAR", "Note ${note.title} is done: ${note.done}")
                             }
                         }
                     }
@@ -210,7 +207,6 @@ private fun HomeScreenTopAppBar(
 @Composable
 fun NoteItem(
     note: Note,
-    isDone: Boolean = false,
     onDeleteClick: () -> Unit = {},
     onclick: () -> Unit = {},
     oneChangeIsDone: () -> Unit = {}
@@ -319,7 +315,6 @@ fun NoteItem(
                     )
                 }
         ) {
-            Log.i("CHECK_VAR", "Inside card, Note ${note.title} is done: $isDone")
             Card(
                 modifier = Modifier
                     .height(100.dp)
@@ -327,7 +322,7 @@ fun NoteItem(
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onclick() },
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isDone)
+                    containerColor = if (note.done)
                         Color(119, 228, 200)
                     else Color(181, 223, 252)
                 )
@@ -340,9 +335,8 @@ fun NoteItem(
                 ) {
                     if (!swipedToDismiss) {
                         Checkbox(
-                            checked = isDone,
+                            checked = note.done,
                             onCheckedChange = {
-                                Log.i("CHECK_VAR", "Inside onCheckedChange, Note ${note.title} is done: $isDone")
                                 oneChangeIsDone()
                             }
                         )
