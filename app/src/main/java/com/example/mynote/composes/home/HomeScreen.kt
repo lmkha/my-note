@@ -1,5 +1,6 @@
 package com.example.mynote.composes.home
 
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,9 +78,10 @@ fun HomeScreen(
     HomeScreenContent(
         uiState = uiState.value,
         onSignOut = viewModel::signOut,
+        onDeleteNote = viewModel::deleteNote,
+        onChangeIsDone = viewModel::changeIsDone,
         onNavigateToEditNote = onNavigateToEditNote,
         onNavigateToAddNote = onNavigateToAddNote,
-        onDeleteNote = viewModel::deleteNote,
         onSignOutNavigate = onSignOutNavigate,
     )
 }
@@ -91,6 +94,7 @@ private fun HomeScreenContent(
     onNavigateToEditNote: (Note) -> Unit = {},
     onNavigateToAddNote: () -> Unit = {},
     onDeleteNote: (Note) -> Unit = {},
+    onChangeIsDone: (Note) -> Unit = {},
     onSignOutNavigate: () -> Unit,
 ) {
     LaunchedEffect(uiState.isSignOut) {
@@ -150,9 +154,12 @@ private fun HomeScreenContent(
                             Row {
                                 NoteItem(
                                     note = note,
+                                    isDone = note.done,
                                     onclick = { onNavigateToEditNote(note) },
-                                    onDeleteClick = { onDeleteNote(note) }
+                                    onDeleteClick = { onDeleteNote(note) },
+                                    oneChangeIsDone = { onChangeIsDone(note) }
                                 )
+                                Log.i("CHECK_VAR", "Note ${note.title} is done: ${note.done}")
                             }
                         }
                     }
@@ -203,15 +210,19 @@ private fun HomeScreenTopAppBar(
 @Composable
 fun NoteItem(
     note: Note,
+    isDone: Boolean = false,
     onDeleteClick: () -> Unit = {},
     onclick: () -> Unit = {},
+    oneChangeIsDone: () -> Unit = {}
 ) {
     val offsetX = remember { Animatable(0f) }
-    var shouldChangeCardWidth by remember { mutableStateOf(false) }
+    var swipedToDismiss by remember { mutableStateOf(false) }
     val dragSpeedFactor = 0.3f
-    val dragRange = 150f
+    val deleteRange = 150f
+    val recoverRange = 10f
+    var isDragLeftToRight = false
     val scope = rememberCoroutineScope()
-    val cardWidth by animateDpAsState(targetValue = if (shouldChangeCardWidth) 250.dp else 360.dp,
+    val cardWidth by animateDpAsState(targetValue = if (swipedToDismiss) 250.dp else 379.dp,
         label = ""
     )
 
@@ -257,7 +268,10 @@ fun NoteItem(
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragEnd = {
-                            val targetValue = offsetX.targetValue.coerceIn(0f, dragRange)
+                            val targetValue = if(!swipedToDismiss && isDragLeftToRight)
+                                offsetX.targetValue.coerceIn(-recoverRange, 0f)
+                            else offsetX.targetValue.coerceIn(0f, deleteRange)
+
                             if (offsetX.targetValue != targetValue) {
                                 // Recovery width if not drag enough
                                 scope.launch {
@@ -272,23 +286,40 @@ fun NoteItem(
                             }
                         },
                         onDrag = { change, dragAmount ->
-                            if (!shouldChangeCardWidth) {
+                            if (!swipedToDismiss) {
                                 if (dragAmount.x < 0) {
-                                    val newOffsetX = offsetX.targetValue + dragAmount.x * dragSpeedFactor
-                                    if (-newOffsetX <= dragRange) {
+                                    isDragLeftToRight = false
+                                    val newOffsetX =
+                                        offsetX.targetValue + dragAmount.x * dragSpeedFactor
+                                    if (-newOffsetX <= deleteRange) {
                                         scope.launch {
                                             offsetX.snapTo(newOffsetX)
                                         }
                                     } else {
-                                        shouldChangeCardWidth = true
+                                        swipedToDismiss = true
                                     }
                                 }
-                                change.consume()
+                            } else {
+                                // When swiped to dismiss, recover the card when drag back
+                                if (dragAmount.x > 0) {
+                                    isDragLeftToRight = true
+                                    val newOffsetX =
+                                        offsetX.targetValue + dragAmount.x * dragSpeedFactor
+                                    if (newOffsetX <= recoverRange) {
+                                        scope.launch {
+                                            offsetX.snapTo(newOffsetX)
+                                        }
+                                    } else {
+                                        swipedToDismiss = false
+                                    }
+                                }
                             }
+                            change.consume()
                         }
                     )
                 }
         ) {
+            Log.i("CHECK_VAR", "Inside card, Note ${note.title} is done: $isDone")
             Card(
                 modifier = Modifier
                     .height(100.dp)
@@ -296,21 +327,40 @@ fun NoteItem(
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onclick() },
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(181, 223, 252)
+                    containerColor = if (isDone)
+                        Color(119, 228, 200)
+                    else Color(181, 223, 252)
                 )
             ) {
-                Column(
-                    modifier = Modifier.padding(8.dp)
+                Row(
+                    modifier = Modifier
+                    .height(100.dp)
+                        .width(cardWidth),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = note.title, style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = note.content,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    if (!swipedToDismiss) {
+                        Checkbox(
+                            checked = isDone,
+                            onCheckedChange = {
+                                Log.i("CHECK_VAR", "Inside onCheckedChange, Note ${note.title} is done: $isDone")
+                                oneChangeIsDone()
+                            }
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .padding(8.dp)
+                    ) {
+                        Text(
+                            text = note.title, style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = note.content,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
@@ -327,6 +377,7 @@ private fun HomeScreenPreview() {
                     id = "1", title = "English certificate", content = "Try to get 800"
                 ),
                 Note(
+                    done = true,
                     id = "2", title = "Android Dev", content = "Get a good job with 3000$ salary"
                 ),
                 Note(

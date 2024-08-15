@@ -28,4 +28,8 @@ class NoteRepositoryImpl @Inject constructor(
     override suspend fun getNoteById(noteId: String): Note? {
         return noteRemoteDataSource.getNoteById(noteId)
     }
+
+    override suspend fun changeIsDone(note: Note) {
+        noteRemoteDataSource.changeIsDone(note)
+    }
 }

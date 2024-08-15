@@ -42,4 +42,8 @@ class NoteRemoteDataSourceImpl @Inject constructor(
     override suspend fun delete(noteId: String) {
         noteCollectionRef.document(noteId).delete().await()
     }
+
+    override suspend fun changeIsDone(note: Note) {
+        noteCollectionRef.document(note.id).set(note.copy(done = !note.done)).await()
+    }
 }

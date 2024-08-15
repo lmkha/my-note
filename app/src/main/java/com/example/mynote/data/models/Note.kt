@@ -10,4 +10,5 @@ data class Note(
     val title: String = "",
     val content: String = "",
     val userId: String = "",
+    val done: Boolean = false
 )

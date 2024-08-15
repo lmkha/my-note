@@ -59,6 +59,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun changeIsDone(note: Note) {
+        viewModelScope.launch {
+            noteRepository.changeIsDone(note)
+        }
+    }
+
     fun signOut() {
         viewModelScope.launch {
             accountRepository.signOut()
