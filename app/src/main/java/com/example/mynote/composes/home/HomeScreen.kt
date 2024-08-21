@@ -1,19 +1,18 @@
 package com.example.mynote.composes.home
 
+import android.content.res.Configuration
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -55,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -211,6 +211,7 @@ fun NoteItem(
     onclick: () -> Unit = {},
     oneChangeIsDone: () -> Unit = {}
 ) {
+
     val offsetX = remember { Animatable(0f) }
     var swipedToDismiss by remember { mutableStateOf(false) }
     val dragSpeedFactor = 0.3f
@@ -218,13 +219,17 @@ fun NoteItem(
     val recoverRange = 10f
     var isDragLeftToRight = false
     val scope = rememberCoroutineScope()
-    val cardWidth by animateDpAsState(targetValue = if (swipedToDismiss) 250.dp else 379.dp,
+    val maxWidth = LocalConfiguration.current.screenWidthDp.dp
+    val iconButtonWidth = 100.dp
+    val cardHeight = 100.dp
+    val cardWidth by animateDpAsState(targetValue = if (swipedToDismiss) maxWidth - iconButtonWidth - 32.dp else maxWidth,
         label = ""
     )
 
     Box(
         modifier = Modifier
-            .fillMaxWidth()
+            .height(cardHeight)
+            .width(maxWidth)
             .padding(
                 top = 8.dp,
                 bottom = 8.dp,
@@ -235,10 +240,10 @@ fun NoteItem(
             .background(Color(255, 140, 158))
             .clickable { onDeleteClick() },
     ) {
+        // Under layer, contain delete button
         Row(
             modifier = Modifier
-                .height(100.dp)
-                .fillMaxWidth()
+                .fillMaxSize()
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color(255, 140, 158)),
             horizontalArrangement = Arrangement.End,
@@ -246,30 +251,31 @@ fun NoteItem(
         ) {
             IconButton(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .width(100.dp),
-                onClick = { }
+                    .height(cardHeight)
+                    .width(iconButtonWidth),
+                onClick = { onDeleteClick() }
             ) {
                 Icon(
                     imageVector = Icons.Filled.Delete, contentDescription = "Delete wish"
                 )
             }
         }
+
+        // Upper layer, contain note card
         Box(
             modifier = Modifier
-                .height(100.dp)
-                .fillMaxWidth()
+                .fillMaxSize()
                 .offset(x = offsetX.value.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .pointerInput(Unit) {
-                    detectDragGestures(
+                    detectHorizontalDragGestures(
                         onDragEnd = {
-                            val targetValue = if(!swipedToDismiss && isDragLeftToRight)
+                            val targetValue = if (!swipedToDismiss && isDragLeftToRight)
                                 offsetX.targetValue.coerceIn(-recoverRange, 0f)
                             else offsetX.targetValue.coerceIn(0f, deleteRange)
 
+                            // Recovery width if not drag enough
                             if (offsetX.targetValue != targetValue) {
-                                // Recovery width if not drag enough
                                 scope.launch {
                                     offsetX.animateTo(
                                         targetValue,
@@ -281,12 +287,12 @@ fun NoteItem(
                                 }
                             }
                         },
-                        onDrag = { change, dragAmount ->
+                        onHorizontalDrag = { change, dragAmount ->
                             if (!swipedToDismiss) {
-                                if (dragAmount.x < 0) {
+                                if (dragAmount < 0) {
                                     isDragLeftToRight = false
                                     val newOffsetX =
-                                        offsetX.targetValue + dragAmount.x * dragSpeedFactor
+                                        offsetX.targetValue + dragAmount * dragSpeedFactor
                                     if (-newOffsetX <= deleteRange) {
                                         scope.launch {
                                             offsetX.snapTo(newOffsetX)
@@ -296,11 +302,10 @@ fun NoteItem(
                                     }
                                 }
                             } else {
-                                // When swiped to dismiss, recover the card when drag back
-                                if (dragAmount.x > 0) {
+                                if (dragAmount > 0) {
                                     isDragLeftToRight = true
                                     val newOffsetX =
-                                        offsetX.targetValue + dragAmount.x * dragSpeedFactor
+                                        offsetX.targetValue + dragAmount * dragSpeedFactor
                                     if (newOffsetX <= recoverRange) {
                                         scope.launch {
                                             offsetX.snapTo(newOffsetX)
@@ -317,7 +322,7 @@ fun NoteItem(
         ) {
             Card(
                 modifier = Modifier
-                    .height(100.dp)
+                    .height(cardHeight)
                     .width(cardWidth)
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onclick() },
@@ -328,9 +333,7 @@ fun NoteItem(
                 )
             ) {
                 Row(
-                    modifier = Modifier
-                    .height(100.dp)
-                        .width(cardWidth),
+                    modifier = Modifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (!swipedToDismiss) {
@@ -363,7 +366,38 @@ fun NoteItem(
 
 @Preview(showBackground = true)
 @Composable
-private fun HomeScreenPreview() {
+private fun PortraitHomeScreenPreview() {
+    HomeScreenContent(
+        uiState = HomeUiState(
+            notes = listOf(
+                Note(
+                    id = "1", title = "English certificate", content = "Try to get 800"
+                ),
+                Note(
+                    done = true,
+                    id = "2", title = "Android Dev", content = "Get a good job with 3000$ salary"
+                ),
+                Note(
+                    id = "3",
+                    title = "Air Blade",
+                    content = "Buy a new one by the end of this year buy a new one by the end of this year Buy a new one by the end of this year"
+                ),
+            ),
+        ),
+        onSignOut = {},
+        onNavigateToAddNote = {},
+        onNavigateToEditNote = {},
+        onSignOutNavigate = {},
+    )
+}
+
+@Preview(
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
+    device = "spec:width=448dp,height=973dp,orientation=landscape"
+)
+@Composable
+private fun LandscapeHomeScreenPreview() {
     HomeScreenContent(
         uiState = HomeUiState(
             notes = listOf(
