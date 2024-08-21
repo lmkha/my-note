@@ -214,6 +214,8 @@ fun NoteItem(
 
     val offsetX = remember { Animatable(0f) }
     var swipedToDismiss by remember { mutableStateOf(false) }
+    // shouldChangeWidth is used because swipedToDismiss value can be changed although the user hand is not released
+    var shouldChangeWidth by remember { mutableStateOf(false) }
     val dragSpeedFactor = 0.3f
     val deleteRange = 150f
     val recoverRange = 10f
@@ -222,7 +224,7 @@ fun NoteItem(
     val maxWidth = LocalConfiguration.current.screenWidthDp.dp
     val iconButtonWidth = 100.dp
     val cardHeight = 100.dp
-    val cardWidth by animateDpAsState(targetValue = if (swipedToDismiss) maxWidth - iconButtonWidth - 32.dp else maxWidth,
+    val cardWidth by animateDpAsState(targetValue = if (shouldChangeWidth) maxWidth - iconButtonWidth - 32.dp else maxWidth,
         label = ""
     )
 
@@ -270,6 +272,7 @@ fun NoteItem(
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
+                            shouldChangeWidth = swipedToDismiss
                             val targetValue = if (!swipedToDismiss && isDragLeftToRight)
                                 offsetX.targetValue.coerceIn(-recoverRange, 0f)
                             else offsetX.targetValue.coerceIn(0f, deleteRange)
