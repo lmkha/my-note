@@ -3,7 +3,6 @@ package com.example.mynote.composes.home
 import android.content.res.Configuration
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -211,22 +210,15 @@ fun NoteItem(
     onclick: () -> Unit = {},
     oneChangeIsDone: () -> Unit = {}
 ) {
-
     val offsetX = remember { Animatable(0f) }
     var swipedToDismiss by remember { mutableStateOf(false) }
-    // shouldChangeWidth is used because swipedToDismiss value can be changed although the user hand is not released
-    var shouldChangeWidth by remember { mutableStateOf(false) }
-    val dragSpeedFactor = 0.3f
-    val deleteRange = 150f
-    val recoverRange = 10f
-    var isDragLeftToRight = false
+    var isDragToRight by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val maxWidth = LocalConfiguration.current.screenWidthDp.dp
+    val dragSpeedFactor = 0.3f
+    val deleteOffsetPoint = -150f
     val iconButtonWidth = 100.dp
     val cardHeight = 100.dp
-    val cardWidth by animateDpAsState(targetValue = if (shouldChangeWidth) maxWidth - iconButtonWidth - 32.dp else maxWidth,
-        label = ""
-    )
 
     Box(
         modifier = Modifier
@@ -271,54 +263,42 @@ fun NoteItem(
                 .clip(RoundedCornerShape(8.dp))
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures(
-                        onDragEnd = {
-                            shouldChangeWidth = swipedToDismiss
-                            val targetValue = if (!swipedToDismiss && isDragLeftToRight)
-                                offsetX.targetValue.coerceIn(-recoverRange, 0f)
-                            else offsetX.targetValue.coerceIn(0f, deleteRange)
-
-                            // Recovery width if not drag enough
-                            if (offsetX.targetValue != targetValue) {
-                                scope.launch {
-                                    offsetX.animateTo(
-                                        targetValue,
-                                        animationSpec = tween(
-                                            durationMillis = 300,
-                                            easing = LinearOutSlowInEasing
-                                        )
-                                    )
-                                }
-                            }
-                        },
                         onHorizontalDrag = { change, dragAmount ->
-                            if (!swipedToDismiss) {
-                                if (dragAmount < 0) {
-                                    isDragLeftToRight = false
-                                    val newOffsetX =
-                                        offsetX.targetValue + dragAmount * dragSpeedFactor
-                                    if (-newOffsetX <= deleteRange) {
-                                        scope.launch {
-                                            offsetX.snapTo(newOffsetX)
-                                        }
-                                    } else {
-                                        swipedToDismiss = true
-                                    }
+                            val newOffsetX = offsetX.targetValue + dragAmount * dragSpeedFactor
+                            if (dragAmount > 0) { // Drag to right
+                                isDragToRight = true
+                                scope.launch {
+                                    offsetX.snapTo(newOffsetX)
                                 }
-                            } else {
-                                if (dragAmount > 0) {
-                                    isDragLeftToRight = true
-                                    val newOffsetX =
-                                        offsetX.targetValue + dragAmount * dragSpeedFactor
-                                    if (newOffsetX <= recoverRange) {
-                                        scope.launch {
-                                            offsetX.snapTo(newOffsetX)
-                                        }
-                                    } else {
-                                        swipedToDismiss = false
-                                    }
+                            } else { // Drag to left
+                                isDragToRight = false
+                                scope.launch {
+                                    offsetX.snapTo(newOffsetX)
                                 }
                             }
                             change.consume()
+                        },
+                        onDragEnd = {
+                            val finalOffsetX: Float
+                            if (isDragToRight) {
+                                swipedToDismiss = false
+                                finalOffsetX = 0f
+                            } else {
+                                if (!swipedToDismiss && offsetX.targetValue < deleteOffsetPoint) {
+                                    swipedToDismiss = true
+                                }
+                                finalOffsetX = -iconButtonWidth.value
+                            }
+
+                            scope.launch {
+                                offsetX.animateTo(
+                                    finalOffsetX,
+                                    animationSpec = tween(
+                                        durationMillis = 300,
+                                        easing = LinearOutSlowInEasing
+                                    )
+                                )
+                            }
                         }
                     )
                 }
@@ -326,7 +306,7 @@ fun NoteItem(
             Card(
                 modifier = Modifier
                     .height(cardHeight)
-                    .width(cardWidth)
+                    .width(maxWidth)
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onclick() },
                 colors = CardDefaults.cardColors(
@@ -337,7 +317,8 @@ fun NoteItem(
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = if(!swipedToDismiss) Arrangement.Start else Arrangement.End
                 ) {
                     if (!swipedToDismiss) {
                         Checkbox(
@@ -348,6 +329,8 @@ fun NoteItem(
                         )
                     }
                     Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.Start,
                         modifier = Modifier
                             .padding(8.dp)
                     ) {
