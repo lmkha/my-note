@@ -211,11 +211,13 @@ fun NoteItem(
     oneChangeIsDone: () -> Unit = {}
 ) {
     val offsetX = remember { Animatable(0f) }
-    var swipedToDismiss by remember { mutableStateOf(false) }
+    var reachToDeletePoint by remember { mutableStateOf(false) }
     var isDragToRight by remember { mutableStateOf(false) }
+    var isDragging by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val maxWidth = LocalConfiguration.current.screenWidthDp.dp
     val dragSpeedFactor = 0.3f
+    val recoveryOffsetPoint = 0f
     val deleteOffsetPoint = -150f
     val iconButtonWidth = 100.dp
     val cardHeight = 100.dp
@@ -231,7 +233,7 @@ fun NoteItem(
                 end = 16.dp
             )
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(255, 140, 158))
+            .background(MaterialTheme.colorScheme.background)
             .clickable { onDeleteClick() },
     ) {
         // Under layer, contain delete button
@@ -239,7 +241,14 @@ fun NoteItem(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color(255, 140, 158)),
+                .background(
+                    if (offsetX.value > 0) {
+                        Color(80, 180, 152)
+                    } else {
+                        Color(255, 140, 158)
+                    }
+                ),
+
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -265,29 +274,47 @@ fun NoteItem(
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { change, dragAmount ->
                             val newOffsetX = offsetX.targetValue + dragAmount * dragSpeedFactor
-                            if (dragAmount > 0) { // Drag to right
-                                isDragToRight = true
-                                scope.launch {
-                                    offsetX.snapTo(newOffsetX)
+
+                            if (dragAmount < 0) { // Drag to left
+                                if (!reachToDeletePoint) { // Only allow drag to left when not reach to delete point
+                                    if (!isDragging) {
+                                        isDragToRight = false
+                                    }
+                                    scope.launch {
+                                        offsetX.snapTo(newOffsetX)
+                                    }
                                 }
-                            } else { // Drag to left
-                                isDragToRight = false
-                                scope.launch {
-                                    offsetX.snapTo(newOffsetX)
+                            } else { // Drag to right
+                                if (reachToDeletePoint) { // Only allow drag to right when reach to delete point
+                                    if (!isDragging) {
+                                        isDragToRight = true
+                                    }
+                                    scope.launch {
+                                        offsetX.snapTo(newOffsetX)
+                                    }
                                 }
                             }
+                            isDragging = true
                             change.consume()
                         },
                         onDragEnd = {
-                            val finalOffsetX: Float
-                            if (isDragToRight) {
-                                swipedToDismiss = false
-                                finalOffsetX = 0f
-                            } else {
-                                if (!swipedToDismiss && offsetX.targetValue < deleteOffsetPoint) {
-                                    swipedToDismiss = true
+                            isDragging = false
+                            var finalOffsetX = 0f
+                            if (!isDragToRight) { // Drag to left
+                                if (!reachToDeletePoint) {
+                                    reachToDeletePoint = offsetX.targetValue < deleteOffsetPoint
                                 }
-                                finalOffsetX = -iconButtonWidth.value
+                                if (reachToDeletePoint) {
+                                    finalOffsetX = -iconButtonWidth.value
+                                }
+                            } else { // Drag to right
+                                if (reachToDeletePoint) {
+                                    if (offsetX.targetValue > recoveryOffsetPoint) {
+                                        reachToDeletePoint = false
+                                    } else {
+                                        finalOffsetX = -iconButtonWidth.value
+                                    }
+                                }
                             }
 
                             scope.launch {
@@ -307,6 +334,13 @@ fun NoteItem(
                 modifier = Modifier
                     .height(cardHeight)
                     .width(maxWidth)
+                    .offset(
+                        x = if (reachToDeletePoint) {
+                            iconButtonWidth
+                        } else {
+                            0.dp
+                        }
+                    )
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onclick() },
                 colors = CardDefaults.cardColors(
@@ -318,9 +352,9 @@ fun NoteItem(
                 Row(
                     modifier = Modifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = if(!swipedToDismiss) Arrangement.Start else Arrangement.End
+                    horizontalArrangement = Arrangement.Start
                 ) {
-                    if (!swipedToDismiss) {
+                    if (!reachToDeletePoint) {
                         Checkbox(
                             checked = note.done,
                             onCheckedChange = {
